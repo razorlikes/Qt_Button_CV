@@ -1,6 +1,7 @@
 #include "worker.h"
+#include <QDebug>
 
-#define RECT_SIZE 45
+#define RECT_SIZE 50
 
 Worker::Worker(QObject *parent) : QObject(parent)
 {
@@ -54,7 +55,7 @@ void Worker::convertFrame(QImage frame, int separator, bool B910Fix)
                     (qGray(rowD[x]) > separator && qGray(row[x]) <= separator && qGray(rowU[x]) <= separator) ||
                     (qGray(rowD[x]) <= separator && qGray(row[x]) <= separator && qGray(rowU[x]) > separator)))
             {
-                //row[x] = qRgb(0, 0, 0);
+                row[x] = qRgb(0, 0, 0);
                 p->drawPoint(x, y);
                 edges[x][y] = true;
                 image[x][y] = true;
@@ -63,11 +64,13 @@ void Worker::convertFrame(QImage frame, int separator, bool B910Fix)
                      ((qGray(row[x-1]) > separator && qGray(row[x]) <= separator && qGray(row[x+1]) <= separator) ||
                      (qGray(row[x-1]) <= separator && qGray(row[x]) <= separator && qGray(row[x+1]) > separator)))
             {
+                row[x] = qRgb(0, 0, 0);
                 p->drawPoint(x, y);
                 edges[x][y] = true;
                 image[x][y] = true;
             }
-            else if (((x != frame.width() - 1) && (x != 0)) && (qGray(row[x]) <= separator && qGray(row[x+1]) <= separator && qGray(row[x-1]) <= separator))
+            else if (((x != frame.width() - 1) && (x != 0)) &&
+                     (qGray(row[x]) <= separator && qGray(row[x+1]) <= separator && qGray(row[x-1]) <= separator))
             {
                 row[x] = qRgb(0, 0, 0);
                 edges[x][y] = false;
@@ -93,7 +96,7 @@ void Worker::convertFrame(QImage frame, int separator, bool B910Fix)
             }
         }
     }
-	
+
     //  >>>LEFT BUTTON<<<
     firstXL_t = -1, firstYL_t = -1, lastXL_t = -1, lastYL_t = -1;
     for (int x = 0; x < frame.width() / 2; x++)
@@ -151,6 +154,7 @@ void Worker::convertFrame(QImage frame, int separator, bool B910Fix)
         if (lastYL_t != -1)
             break;
     }
+    //qDebug() << "Left button scan passed!";
 
     //  >>>RIGHT BUTTON<<<
     firstXR_t = -1, firstYR_t = -1, lastXR_t = -1, lastYR_t = -1;//reset all temporary variables
@@ -209,6 +213,7 @@ void Worker::convertFrame(QImage frame, int separator, bool B910Fix)
         if (lastYR_t != -1)
             break;
     }
+    //qDebug() << "Right button scan passed!";
 
     if (firstXR_t == -1 && !isFieldLocked)  //if no pixels are found set to 0 to prevent out of index crash on average calculation
     {
@@ -216,6 +221,9 @@ void Worker::convertFrame(QImage frame, int separator, bool B910Fix)
         firstYR = 0;
         lastXR = 0;
         lastYR = 0;
+    }
+    else if (firstXL_t == -1 && !isFieldLocked)
+    {
         firstXL = 0;
         firstYL = 0;
         lastXL = 0;
@@ -232,6 +240,7 @@ void Worker::convertFrame(QImage frame, int separator, bool B910Fix)
         lastXL = lastXL_t;
         lastYL = lastYL_t;
     }
+    //qDebug() << "Variable copy passed!";
 
     xAvgL = 0, yAvgL = 0;
     int pixNumL = 0;
@@ -247,6 +256,7 @@ void Worker::convertFrame(QImage frame, int separator, bool B910Fix)
             }
         }
     }
+    //qDebug() << "Left average calculation passed!";
 
     xAvgR = 0, yAvgR = 0;
     int pixNumR = 0;
@@ -262,6 +272,7 @@ void Worker::convertFrame(QImage frame, int separator, bool B910Fix)
             }
         }
     }
+    //qDebug() << "Right average calculation passed!";
 
     if (pixNumR > 0 && pixNumL > 0)  //prevent crash when 0 black pixels > divide by 0
     {
@@ -270,17 +281,21 @@ void Worker::convertFrame(QImage frame, int separator, bool B910Fix)
         xAvgL = xAvgL / pixNumL;
         yAvgL = yAvgL / pixNumL;
 
-        p->setPen(Qt::blue);
-        //p->drawPoint(xAvgR, yAvgR);
-        p->drawLine(xAvgR, 0, xAvgR, frame.height());
-        p->drawLine(frame.width() / 2, yAvgR, frame.width(), yAvgR);
-        p->drawLine(xAvgL, 0, xAvgL, frame.height());
-        p->drawLine(0, yAvgL, frame.width() / 2, yAvgL);
+        if (isFieldLocked)
+        {
+            p->setPen(Qt::blue);
+            p->drawLine(xAvgR, 0, xAvgR, frame.height());
+            p->drawLine(frame.width() / 2, yAvgR, frame.width(), yAvgR);
+            p->drawLine(xAvgL, 0, xAvgL, frame.height());
+            p->drawLine(0, yAvgL, frame.width() / 2, yAvgL);
+        }
+
         p->setPen(Qt::yellow);
         p->drawRect(QRect(QPoint(firstXR, firstYR), QPoint(lastXR, lastYR)));
         p->setPen(Qt::green);
         p->drawRect(QRect(QPoint(firstXL, firstYL), QPoint(lastXL, lastYL)));
     }
+    //qDebug() << "Drawing passed!";
 
     p->end();  //outside of if clause since painter gets started anyway
 

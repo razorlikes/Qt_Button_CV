@@ -194,7 +194,7 @@ void MainWindow::updateUI(QPixmap frame, QPixmap overlay, int xAvgR_t, int yAvgR
         launchApplicationR();  //launch application when average values differ more than the given percentage
         pressedR = true;
     }
-    else if ((xAvgR_t >= xAvgR - 1 && xAvgR_t <= xAvgR + 1) && (yAvgR_t >= yAvgR - 1 && yAvgR_t <= yAvgR + 1))  //reset when average coordinates go back to initial averages +/-1
+    else if ((xAvgR_t >= xAvgR - 2 && xAvgR_t <= xAvgR + 2) && (yAvgR_t >= yAvgR - 2 && yAvgR_t <= yAvgR + 2))  //reset when average coordinates go back to initial averages +/-1
         pressedR = false;
 
     if (!pressedL && isFieldLocked && (((xAvgL != 0) && ((xAvgL_t - xAvgL >= (widthL / 100.0 * X_TRIG_PERCENTAGE)) || (xAvgL_t - xAvgL <= (widthL / 100.0 * -X_TRIG_PERCENTAGE)))) ||
@@ -233,7 +233,7 @@ void MainWindow::launchApplicationL()
 
 void MainWindow::launchApplicationR()
 {
-    //QProcess::startDetached("notepad");
+    //QProcess::startDetached("mspaint");
 }
 
 void MainWindow::fieldLocked(int xAvgR_t, int yAvgR_t, int xAvgL_t, int yAvgL_t, int widthR_t, int heightR_t, int widthL_t, int heightL_t)
